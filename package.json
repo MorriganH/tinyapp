@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/MorriganH/tinyapp/issues"
   },
-  "homepage": "https://github.com/MorriganH/tinyapp#readme"
+  "homepage": "https://github.com/MorriganH/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
