@@ -8,12 +8,13 @@ const generateRandomString = () => {
   for (let char = 0; char < 6; char++) {
     shortID += characters[Math.floor(Math.random() * 62)];
   }
+  return shortID;
 };
 
 app.set('view engine', 'ejs');
 
 const urlDatabase = {
-  'b2xVn2': 'http://www.lighthouselabs.cs',
+  'b2xVn2': 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com'
 };
 
@@ -37,6 +38,11 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+app.get('/u/:id', (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
+
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
@@ -46,9 +52,10 @@ app.get('/hello', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
-})
+  const shortID = generateRandomString();
+  urlDatabase[shortID] = req.body.longURL;
+  res.redirect(`/urls/${shortID}`);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
