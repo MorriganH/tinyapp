@@ -21,6 +21,10 @@ const findUser = (email, userDB) => {
   return null;
 };
 
+// const urlsForUser = (id) => {
+//   return 
+// };
+
 app.set('view engine', 'ejs');
 
 const urlDatabase = {
@@ -40,6 +44,11 @@ const userDB = {
     email: 'morrigan@test.com',
     password: '567Potato',
   },
+  '3sVa8L': {
+    id: '3sVa8L',
+    email: 'silly@test.com',
+    password: 'hahaha',
+  },
 };
 
 app.use(express.urlencoded({ extended: true }));
@@ -50,7 +59,12 @@ app.get('/', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase, user: userDB[req.cookies["user_ID"]] || {} };
+  let loggedIn = false;
+  if (req.cookies['user_ID']) {
+    loggedIn = true;
+  }
+
+  const templateVars = { urls: urlDatabase, user: userDB[req.cookies["user_ID"]] || {}, loggedIn };
   res.render('urls_index', templateVars);
 });
 
