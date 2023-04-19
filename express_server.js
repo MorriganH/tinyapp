@@ -24,8 +24,14 @@ const findUser = (email, userDB) => {
 app.set('view engine', 'ejs');
 
 const urlDatabase = {
-  'b2xVn2': 'http://www.lighthouselabs.ca',
-  '9sm5xK': 'http://www.google.com'
+  'b2xVn2': {
+    longURL: 'http://www.lighthouselabs.ca',
+    userID: 'jD0v9w',
+  },
+  '9sm5xK': {
+    longURL: 'http://www.google.com',
+    userID: 'jD0v9w',
+  },
 };
 
 const userDB = {
@@ -55,7 +61,7 @@ app.post('/urls', (req, res) => {
   }
   
   const shortID = generateRandomString();
-  urlDatabase[shortID] = req.body.longURL;
+  urlDatabase[shortID].longURL = req.body.longURL;
   res.redirect(`/urls/${shortID}`);
 });
 
@@ -70,7 +76,7 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.get('/urls/:id', (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: userDB[req.cookies["user_ID"]] || {} };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: userDB[req.cookies["user_ID"]] || {} };
   res.render('urls_show', templateVars);
 });
 
@@ -82,17 +88,17 @@ app.post('/urls/:id/delete', (req, res) => {
 
 app.post('/urls/:id/edit', (req, res) => {
   const id = req.params.id;
-  urlDatabase[id] = req.body.longURL;
+  urlDatabase[id].longURL = req.body.longURL;
   res.redirect('/urls');
 });
 
 app.get('/u/:id', (req, res) => {
-  if (!urlDatabase[req.params.id]) {
+  if (!urlDatabase[req.params.id].longURL) {
     res.status(400).send("URL '" + req.params.id + "' does not exist");
     return;
   }
 
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
