@@ -62,6 +62,7 @@ app.post('/urls', (req, res) => {
 app.get('/urls/new', (req, res) => {
   if (!req.cookies['user_ID']) {
     res.redirect('/login');
+    return;
   }
   
   const templateVars = { user: userDB[req.cookies["user_ID"]] || {} };
@@ -98,6 +99,7 @@ app.get('/u/:id', (req, res) => {
 app.get('/register', (req, res) => {
   if (req.cookies['user_ID']) {
     res.redirect('/urls');
+    return;
   }
 
   const templateVars = { user: {} }
@@ -133,6 +135,7 @@ app.post('/register', (req, res) => {
 app.get('/login', (req, res) => {
   if (req.cookies['user_ID']) {
     res.redirect('/urls');
+    return;
   }
   
   const templateVars = {user: {}};
