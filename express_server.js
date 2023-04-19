@@ -49,12 +49,21 @@ app.get('/urls', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
+  if (!req.cookies['user_ID']) {
+    res.status(400).send("You have to be logged in to shorten a URL!");
+    return;
+  }
+  
   const shortID = generateRandomString();
   urlDatabase[shortID] = req.body.longURL;
   res.redirect(`/urls/${shortID}`);
 });
 
 app.get('/urls/new', (req, res) => {
+  if (!req.cookies['user_ID']) {
+    res.redirect('/login');
+  }
+  
   const templateVars = { user: userDB[req.cookies["user_ID"]] || {} };
   res.render('urls_new', templateVars);
 });
