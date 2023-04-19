@@ -126,16 +126,47 @@ app.get('/urls/:id', (req, res) => {
 app.post('/urls/:id/delete', (req, res) => {
   
   const id = req.params.id;
-  delete urlDatabase[id];
 
+  if (!(id in urlDatabase)) {
+    res.status(400).send("URL does not exist");
+    return;
+  }
+  
+  if (!req.cookies['user_ID']) {
+    res.status(400).send("You must be logged in to perform this action");
+    return;
+  }
+
+  if (req.cookies["user_ID"] !== urlDatabase[id].userID) {
+    res.status(400).send("You did not create this URL");
+    return;
+  } 
+  
+  delete urlDatabase[id];
   res.redirect('/urls');
 });
 
-app.post('/urls/:id/edit', (req, res) => {
+app.post('/urls/:id', (req, res) => {
 
   const id = req.params.id;
-  urlDatabase[id].longURL = req.body.longURL;
+  
+  if (!(id in urlDatabase)) {
+    res.status(400).send("URL does not exist");
+    return;
+  }
 
+  if (!req.cookies['user_ID']) {
+    res.status(400).send("You must be logged in to perform this action");
+    return;
+  }
+  
+  if (req.cookies["user_ID"] !== urlDatabase[id].userID) {
+    res.status(400).send("You did not create this URL");
+    return;
+  } 
+
+  urlDatabase[id].longURL = req.body.longURL;
+  
   res.redirect('/urls');
 });
 
