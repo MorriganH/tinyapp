@@ -86,6 +86,11 @@ app.post('/urls/:id/edit', (req, res) => {
 });
 
 app.get('/u/:id', (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    res.status(400).send("URL '" + req.params.id + "' does not exist");
+    return;
+  }
+
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
