@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
     <!-- Bootstrap CSS -->
     <link
       rel="stylesheet"
@@ -12,26 +18,29 @@
   </head>
   <body>
     <%- include('partials/_header') %>
-    <h1>Login</h1>
-    <form class="form-inline" method="POST" action="/login">
-      <h4>Email address</h4>
-      <input
-      class="form-control"
-      type="email"
-      name="email"
-      placeholder="email"
-      style="width: 300px; margin: 1em"
-      />
-      <h4>Password</h4>
-      <input
-      class="form-control"
-      type="password"
-      name="password"
-      placeholder="password"
-      style="width: 300px; margin: 1em"
-      />
-      <button type="submit" class="btn btn-primary">Login</button>
-    </form>
+    <main style="margin: 1em;">
+      <h1>Login</h1>
+      <form class="form-inline" method="POST" action="/login">
+        <h4>Email address</h4>
+        <input
+        class="form-control"
+        type="email"
+        name="email"
+        placeholder="email"
+        style="width: 300px; margin: 1em"
+        />
+        <h4>Password</h4>
+        <input
+        class="form-control"
+        type="password"
+        name="password"
+        placeholder="password"
+        style="width: 300px; margin: 1em"
+        />
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+    </main>
+    
       <!-- Bootstrap JS -->
       <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
