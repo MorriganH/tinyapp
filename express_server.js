@@ -1,7 +1,12 @@
 const express = require('express');
 const app = express();
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
 const PORT = 8080;
+
+app.set('view engine', 'ejs');
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 const generateRandomString = () => {
   const characters = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -31,8 +36,6 @@ const urlsForUser = (id) => {
   return usersURLS;
 };
 
-app.set('view engine', 'ejs');
-
 const urlDatabase = {
   'b2xVn2': {
     longURL: 'http://www.lighthouselabs.ca',
@@ -56,9 +59,6 @@ const userDB = {
     password: 'hahaha',
   },
 };
-
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 app.get('/', (req, res) => {
 
@@ -214,8 +214,10 @@ app.post('/register', (req, res) => {
   userDB[userID] = {
     id: userID,
     email,
-    password
+    password: bcrypt.hashSync(password, 10)
   };
+  console.log(password);
+  console.log(userDB[userID].password);
 
   res.cookie('user_ID', userID);
   res.redirect('/urls');
@@ -249,10 +251,12 @@ app.post('/login', (req, res) => {
     return;
   }
 
-  if (user.password !== password) {
+  // if (user.password !== password) {
+  if (!(bcrypt.compareSync(password, user.password))) {
     res.status(403).send("Password does not match");
     return;
   }
+  console.log(password);
 
   res.cookie('user_ID', user.id);
   res.redirect('/urls')
