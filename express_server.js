@@ -1,12 +1,15 @@
 const express = require('express');
 const app = express();
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const PORT = 8080;
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['123', '456', '789']
+}));
 
 const generateRandomString = () => {
   const characters = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -47,7 +50,6 @@ const urlDatabase = {
   },
 };
 
-
 const userDB = {
   'jD0v9w': {
     id: 'jD0v9w',
@@ -69,13 +71,13 @@ app.get('/', (req, res) => {
 app.get('/urls', (req, res) => {
 
   let loggedIn = false;
-  if (req.cookies['user_ID']) {
+  if (req.session.user_ID) {
     loggedIn = true;
   }
 
   const templateVars = {
-    urls: urlsForUser(req.cookies['user_ID']),
-    user: userDB[req.cookies["user_ID"]] || {},
+    urls: urlsForUser(req.session.user_ID),
+    user: userDB[req.session.user_ID] || {},
     loggedIn
   };
 
@@ -84,7 +86,7 @@ app.get('/urls', (req, res) => {
 
 app.post('/urls', (req, res) => {
 
-  if (!req.cookies['user_ID']) {
+  if (!req.session.user_ID) {
     res.status(400).send("You have to be logged in to shorten a URL!");
     return;
   }
@@ -97,12 +99,12 @@ app.post('/urls', (req, res) => {
 
 app.get('/urls/new', (req, res) => {
 
-  if (!req.cookies['user_ID']) {
+  if (!req.session.user_ID) {
     res.redirect('/login');
     return;
   }
   
-  const templateVars = { user: userDB[req.cookies["user_ID"]] || {} };
+  const templateVars = { user: userDB[req.session.user_ID] || {} };
 
   res.render('urls_new', templateVars);
 });
@@ -110,14 +112,14 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:id', (req, res) => {
 
   let loggedIn = false;
-  if (req.cookies['user_ID']) {
+  if (req.session.user_ID) {
     loggedIn = true;
   }
 
   const templateVars = {
     id: req.params.id,
     dataURL: urlDatabase[req.params.id],
-    user: userDB[req.cookies["user_ID"]] || {},
+    user: userDB[req.session.user_ID] || {},
     loggedIn
   };
 
@@ -133,12 +135,12 @@ app.post('/urls/:id/delete', (req, res) => {
     return;
   }
   
-  if (!req.cookies['user_ID']) {
+  if (!req.session.user_ID) {
     res.status(400).send("You must be logged in to perform this action");
     return;
   }
 
-  if (req.cookies["user_ID"] !== urlDatabase[id].userID) {
+  if (req.session.user_ID !== urlDatabase[id].userID) {
     res.status(400).send("You did not create this URL");
     return;
   } 
@@ -156,12 +158,12 @@ app.post('/urls/:id', (req, res) => {
     return;
   }
 
-  if (!req.cookies['user_ID']) {
+  if (!req.session.user_ID) {
     res.status(400).send("You must be logged in to perform this action");
     return;
   }
   
-  if (req.cookies["user_ID"] !== urlDatabase[id].userID) {
+  if (req.session.user_ID !== urlDatabase[id].userID) {
     res.status(400).send("You did not create this URL");
     return;
   } 
@@ -185,7 +187,7 @@ app.get('/u/:id', (req, res) => {
 
 app.get('/register', (req, res) => {
 
-  if (req.cookies['user_ID']) {
+  if (req.session.user_ID) {
     res.redirect('/urls');
     return;
   }
@@ -219,14 +221,14 @@ app.post('/register', (req, res) => {
       password: hash
     }
 
-    res.cookie('user_ID', userID);
+    req.session.user_ID = userID;
     res.redirect('/urls');
   });
 });
 
 app.get('/login', (req, res) => {
 
-  if (req.cookies['user_ID']) {
+  if (req.session.user_ID) {
     res.redirect('/urls');
     return;
   }
@@ -255,7 +257,7 @@ app.post('/login', (req, res) => {
   bcrypt.compare(password, user.password)
     .then((result) => {
       if(result) {
-        res.cookie('user_ID', user.id);
+        req.session.user_ID = user.id;
         res.redirect('/urls');
       } else {
         throw error;
@@ -273,7 +275,7 @@ app.post('/login', (req, res) => {
 
 app.post('/logout', (req, res) => {
 
-  res.clearCookie('user_ID');
+  req.session = null;
   res.redirect('/login');
 });
 
