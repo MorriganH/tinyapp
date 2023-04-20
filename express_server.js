@@ -210,17 +210,17 @@ app.post('/register', (req, res) => {
     return;
   }
 
-  const userID = generateRandomString();
-  userDB[userID] = {
-    id: userID,
-    email,
-    password: bcrypt.hashSync(password, 10)
-  };
-  console.log(password);
-  console.log(userDB[userID].password);
+  bcrypt.hash(password, 10, (err, hash) => {
+    const userID = generateRandomString();
+    userDB[userID] = {
+      id: userID,
+      email,
+      password: hash
+    }
 
-  res.cookie('user_ID', userID);
-  res.redirect('/urls');
+    res.cookie('user_ID', userID);
+    res.redirect('/urls');
+  });
 });
 
 app.get('/login', (req, res) => {
@@ -251,15 +251,23 @@ app.post('/login', (req, res) => {
     return;
   }
 
-  // if (user.password !== password) {
-  if (!(bcrypt.compareSync(password, user.password))) {
-    res.status(403).send("Password does not match");
-    return;
-  }
-  console.log(password);
+  bcrypt.compare(password, user.password)
+    .then((result) => {
+      if(result) {
+        res.cookie('user_ID', user.id);
+        res.redirect('/urls');
+      } else {
+        throw error;
+      }
+    })
+    .catch(() => {
+      res.status(403).send("Password does not match");
+    })
+  // if (!(bcrypt.compareSync(password, user.password))) {
+  //   res.status(403).send("Password does not match");
+  //   return;
+  // }
 
-  res.cookie('user_ID', user.id);
-  res.redirect('/urls')
 });
 
 app.post('/logout', (req, res) => {
