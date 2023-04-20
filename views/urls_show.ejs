@@ -21,7 +21,11 @@
     <main style="margin: 1em;">
       <% if (!loggedIn) { %>
         <h4>Please Login or Register to view your URLs</h4>
-      <% } else if (dataURL.userID === user.id) { %>
+      <% } else if (!dataURL) { %>
+        <h4>Short URL not found</h4>
+        <% } else if (dataURL.userID !== user.id) { %>
+          <h4>You did not create this URL</h4>
+      <% } else { %>
         <div class="card text-center">
           <div class="card-header"></div>
           <div class="card-body">
@@ -39,12 +43,10 @@
             value="<%= dataURL.longURL %>"
             style="width: 300px; margin: 1em"
             />
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="submit" class="btn btn-primary">Update</button>
           </form>
           <div class="card-footer text-muted"></div>
         </div>
-      <% } else if (dataURL.userID !== user.id) { %>
-        <h4>You did not create this URL</h4>
       <% } %>
     </main>
 

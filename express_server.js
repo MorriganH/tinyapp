@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const PORT = 8080;
 
 const { generateRandomString, findUser, urlsForUser } = require('./helpers');
+const { urlDatabase, userDB } = require('./databases');
 
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
@@ -13,35 +14,18 @@ app.use(cookieSession({
   keys: ['123', '456', '789']
 }));
 
-const urlDatabase = {
-  'b2xVn2': {
-    longURL: 'http://www.lighthouselabs.ca',
-    userID: 'jD0v9w',
-  },
-  '9sm5xK': {
-    longURL: 'http://www.google.com',
-    userID: 'jD0v9w',
-  },
-};
-
-const userDB = {
-  'jD0v9w': {
-    id: 'jD0v9w',
-    email: 'morrigan@test.com',
-    password: bcrypt.hashSync('567Potato', 10)
-  },
-  '3sVa8L': {
-    id: '3sVa8L',
-    email: 'silly@test.com',
-    password: bcrypt.hashSync('hahaha', 10)
-  },
-};
-
+// homepage, redirects to /urls if logged in, or /login if not
 app.get('/', (req, res) => {
 
-  res.redirect('/urls');
+  if (req.session.user_ID) {
+    res.redirect('/urls');
+    return;
+  }
+
+  res.redirect('/login');
 });
 
+// page to show list of user's URLs. renders with urls_index.ejs
 app.get('/urls', (req, res) => {
 
   let loggedIn = false;
@@ -58,6 +42,7 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
+// generates new shortURL for the current user. post request to this page can be found in urls_new.ejs
 app.post('/urls', (req, res) => {
 
   if (!req.session.user_ID) {
@@ -74,35 +59,64 @@ app.post('/urls', (req, res) => {
   res.redirect(`/urls/${shortID}`);
 });
 
+// page to generate new shortURL. renders with urls_new.ejs
 app.get('/urls/new', (req, res) => {
-
+  
   if (!req.session.user_ID) {
     res.redirect('/login');
     return;
   }
   
   const templateVars = { user: userDB[req.session.user_ID] || {} };
-
+  
   res.render('urls_new', templateVars);
 });
 
+// page to view details about one shortURL. renders with urls_show.ejs
 app.get('/urls/:id', (req, res) => {
 
   let loggedIn = false;
   if (req.session.user_ID) {
     loggedIn = true;
   }
-
+  
   const templateVars = {
     id: req.params.id,
     dataURL: urlDatabase[req.params.id],
     user: userDB[req.session.user_ID] || {},
     loggedIn
   };
-
+  
   res.render('urls_show', templateVars);
 });
 
+// edits the longURL associated with :id. post request to this page can be found in urls_show.ejs
+app.post('/urls/:id', (req, res) => {
+
+  const id = req.params.id;
+  
+  if (!(id in urlDatabase)) {
+    res.status(400).send("URL does not exist");
+    return;
+  }
+
+  if (!req.session.user_ID) {
+    res.status(400).send("You must be logged in to perform this action");
+    return;
+  }
+  
+  if (req.session.user_ID !== urlDatabase[id].userID) {
+    res.status(400).send("You did not create this URL");
+    return;
+  }
+
+  urlDatabase[id].longURL = req.body.longURL;
+  
+  // the 'Updating URLs' assignment page says this should redirect to the urls_show (urls/:id) page, but the submit project page says this should redirect to the /urls page. I feel like going back to the id page makes a bit more sense, so I went with that
+  res.redirect(`/urls/${id}`);
+});
+
+// deletes the data at the :id. post request to this page can be found in urls_index.ejs
 app.post('/urls/:id/delete', (req, res) => {
   
   const id = req.params.id;
@@ -126,33 +140,10 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls');
 });
 
-app.post('/urls/:id', (req, res) => {
-
-  const id = req.params.id;
-  
-  if (!(id in urlDatabase)) {
-    res.status(400).send("URL does not exist");
-    return;
-  }
-
-  if (!req.session.user_ID) {
-    res.status(400).send("You must be logged in to perform this action");
-    return;
-  }
-  
-  if (req.session.user_ID !== urlDatabase[id].userID) {
-    res.status(400).send("You did not create this URL");
-    return;
-  }
-
-  urlDatabase[id].longURL = req.body.longURL;
-  
-  res.redirect('/urls');
-});
-
+// redirects to the longURL webpage associated with :id
 app.get('/u/:id', (req, res) => {
 
-  if (!urlDatabase[req.params.id].longURL) {
+  if (!urlDatabase[req.params.id]) {
     res.status(400).send("URL '" + req.params.id + "' does not exist");
     return;
   }
@@ -162,6 +153,7 @@ app.get('/u/:id', (req, res) => {
   res.redirect(longURL);
 });
 
+// page to register a new user. renders with register.ejs
 app.get('/register', (req, res) => {
 
   if (req.session.user_ID) {
@@ -174,6 +166,7 @@ app.get('/register', (req, res) => {
   res.render('register', templateVars);
 });
 
+// generates new user information. post request to this page can be found in register.ejs
 app.post('/register', (req, res) => {
 
   const { email, password } = req.body;
@@ -203,6 +196,7 @@ app.post('/register', (req, res) => {
   });
 });
 
+// page to login to an existing user. renders with login.ejs
 app.get('/login', (req, res) => {
 
   if (req.session.user_ID) {
@@ -215,6 +209,7 @@ app.get('/login', (req, res) => {
   res.render('login', templateVars);
 });
 
+// sets cookie session so a user can be logged in. post request to this page can be found in login.ejs
 app.post('/login', (req, res) => {
 
   const { email, password } = req.body;
@@ -243,26 +238,14 @@ app.post('/login', (req, res) => {
     .catch(() => {
       res.status(403).send("Password does not match");
     });
-  // if (!(bcrypt.compareSync(password, user.password))) {
-  //   res.status(403).send("Password does not match");
-  //   return;
-  // }
-
 });
 
+// clears cookie session to logout the user
 app.post('/logout', (req, res) => {
 
   req.session = null;
   res.redirect('/login');
 });
-
-// app.get('/urls.json', (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-// app.get('/hello', (req, res) => {
-//   res.send('<html><body>Hello <b>World</b></body></html>\n');
-// });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
