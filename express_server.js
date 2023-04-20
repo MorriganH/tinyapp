@@ -4,40 +4,14 @@ const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const PORT = 8080;
 
+const { generateRandomString, findUser, urlsForUser } = require('./helpers');
+
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
   keys: ['123', '456', '789']
 }));
-
-const generateRandomString = () => {
-  const characters = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-  let shortID = '';
-  for (let char = 0; char < 6; char++) {
-    shortID += characters[Math.floor(Math.random() * 62)];
-  }
-  return shortID;
-};
-
-const findUser = (email, userDB) => {
-  for (let userID in userDB) {
-    if (userDB[userID].email === email) {
-      return userDB[userID];
-    }
-  }
-  return null;
-};
-
-const urlsForUser = (id) => {
-  let usersURLS = {};
-  for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      usersURLS[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return usersURLS;
-};
 
 const urlDatabase = {
   'b2xVn2': {
@@ -76,7 +50,7 @@ app.get('/urls', (req, res) => {
   }
 
   const templateVars = {
-    urls: urlsForUser(req.session.user_ID),
+    urls: urlsForUser(req.session.user_ID, urlDatabase),
     user: userDB[req.session.user_ID] || {},
     loggedIn
   };
@@ -92,7 +66,10 @@ app.post('/urls', (req, res) => {
   }
   
   const shortID = generateRandomString();
-  urlDatabase[shortID].longURL = req.body.longURL;
+  urlDatabase[shortID] = {
+    longURL: req.body.longURL,
+    userID: req.session.user_ID
+  };
 
   res.redirect(`/urls/${shortID}`);
 });
@@ -143,7 +120,7 @@ app.post('/urls/:id/delete', (req, res) => {
   if (req.session.user_ID !== urlDatabase[id].userID) {
     res.status(400).send("You did not create this URL");
     return;
-  } 
+  }
   
   delete urlDatabase[id];
   res.redirect('/urls');
@@ -166,7 +143,7 @@ app.post('/urls/:id', (req, res) => {
   if (req.session.user_ID !== urlDatabase[id].userID) {
     res.status(400).send("You did not create this URL");
     return;
-  } 
+  }
 
   urlDatabase[id].longURL = req.body.longURL;
   
@@ -192,10 +169,10 @@ app.get('/register', (req, res) => {
     return;
   }
 
-  const templateVars = { user: {} }
+  const templateVars = { user: {} };
 
   res.render('register', templateVars);
-})
+});
 
 app.post('/register', (req, res) => {
 
@@ -219,7 +196,7 @@ app.post('/register', (req, res) => {
       id: userID,
       email,
       password: hash
-    }
+    };
 
     req.session.user_ID = userID;
     res.redirect('/urls');
@@ -235,7 +212,7 @@ app.get('/login', (req, res) => {
   
   const templateVars = {user: {}};
 
-  res.render('login', templateVars)
+  res.render('login', templateVars);
 });
 
 app.post('/login', (req, res) => {
@@ -256,16 +233,16 @@ app.post('/login', (req, res) => {
 
   bcrypt.compare(password, user.password)
     .then((result) => {
-      if(result) {
+      if (result) {
         req.session.user_ID = user.id;
         res.redirect('/urls');
       } else {
-        throw error;
+        throw Error;
       }
     })
     .catch(() => {
       res.status(403).send("Password does not match");
-    })
+    });
   // if (!(bcrypt.compareSync(password, user.password))) {
   //   res.status(403).send("Password does not match");
   //   return;
