@@ -47,16 +47,17 @@ const urlDatabase = {
   },
 };
 
+
 const userDB = {
   'jD0v9w': {
     id: 'jD0v9w',
     email: 'morrigan@test.com',
-    password: '567Potato',
+    password: bcrypt.hashSync('567Potato', 10)
   },
   '3sVa8L': {
     id: '3sVa8L',
     email: 'silly@test.com',
-    password: 'hahaha',
+    password: bcrypt.hashSync('hahaha', 10)
   },
 };
 
